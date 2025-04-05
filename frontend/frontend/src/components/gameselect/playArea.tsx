@@ -1,13 +1,11 @@
-import GameCompletionModal from "./modal"
+"use client"
 
-import { useState, useEffect, useRef, use } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Input } from "../ui/input"
 import { CheckCircle2, Circle, Lock, Clock, Trophy, Zap, User, Cookie } from "lucide-react"
 import axios from "axios"
 import Header from "./header"
-
 import toast from "react-hot-toast"
 
 
@@ -17,36 +15,34 @@ export default function MathGame() {
   let uid = ""
   const [expression, setExpression] = useState("")
   const [gameData, setGameData] = useState({
-    "gid": "game123",
-    "player_one": "player123",
-    "player_two": "player456",
-    "status": "status",
-    "player1expression": "",
-    "player2expression": "",
-    "player1solves": ["0", "0", "0", "0", "0"],
-    "player2solves": ["0", "0", "0", "0", "0"],
-    "player1questions": ["0", "0", "0", "0", "0"],
-    "player2questions": ["0", "0", "0", "0", "0"],
-    "player1curround": 1,
-    "player2curround": 1,
-    "player1points": 0,
-    "player2points": 0,
+    "gid":                  "game123",
+    "player_one":           "player123",
+    "player_two":           "player456",
+    "status":               "status",
+    "player1expression":    "",
+    "player2expression":    "",
+    "player1solves":        ["0", "0", "0", "0", "0"],
+    "player2solves":        ["0", "0", "0", "0", "0"],
+    "player1questions":     ["0", "0", "0", "0", "0"],
+    "player2questions":     ["0", "0", "0", "0", "0"],
+    "player1curround":      1,
+    "player2curround":      1,
+    "player1points":        0,
+    "player2points":        0,
     "player1ratingchanges": 0,
     "player2ratingchanges": 0,
-    "noofrounds": 5,
-    "winner" : "",
-  })
+    "noofrounds":           5,
+})
   const [round, setRound] = useState(0)
   const [question, setQuestion] = useState("666666")
-  const [player1, setPlayer1] = useState({ uid: "", username: "Anubhab", rating: 0 })
-  const [player2, setPlayer2] = useState({ uid: "", username: "Sagnik", rating: 0 })
-  const [showGameCompleteModal, setShowGameCompleteModal] = useState(false);
+  const [player1, setPlayer1] = useState({ uid:"",username: "Anubhab", rating: 0 })
+  const [player2, setPlayer2] = useState({ uid:"",username: "Sagnik", rating: 0 })
 
 
   // Refs
   const ws = useRef<WebSocket | null>(null)
   const submitButtonRef = useRef<HTMLButtonElement | null>(null)
-  function getCookie(name: string) {
+  function getCookie(name : string) {
     const cookieValue = document.cookie
       .split('; ')
       .find(row => row.startsWith(name + '='))
@@ -75,7 +71,7 @@ export default function MathGame() {
           gameInit(data.message)
           interval = setInterval(() => {
             getGameData()
-          }, 100)
+          }, 500)
 
           // Initialize rounds history
 
@@ -96,9 +92,6 @@ export default function MathGame() {
 
         if (data.title === "gameData") {
           setGameData(data.message)
-          if (data.message.status === "completed") {
-            setShowGameCompleteModal(true)
-          }
         }
       } catch (error) {
         console.error("Error parsing message:", error)
@@ -107,11 +100,11 @@ export default function MathGame() {
 
     ws.current.onerror = (error) => {
       console.error("WebSocket error:", error)
+      toast.error("Websocket error")
     }
 
     ws.current.onclose = () => {
       console.log("WebSocket connection closed")
-      navigate("/home")
     }
 
     return () => {
@@ -137,14 +130,12 @@ export default function MathGame() {
 
   const handleSubmitResponse = (response: boolean) => {
     if (response) {
-      toast.success("Correct answer!  🎉")
       changeBackgroundColor("bg-green-500")
-      setTimeout(() => { console.log("hi") }, 200)
+      setTimeout(() => {console.log("hi")}, 200)
       resetBackgroundColor("bg-green-500")
     } else {
-      toast.error("Wrong answer!  ❌")
       changeBackgroundColor("bg-red-500")
-      setTimeout(() => { console.log("hi") }, 200)
+      setTimeout(() => {console.log("hi")}, 200)
       resetBackgroundColor("bg-red-500")
     }
     if (submitButtonRef.current) {
@@ -166,6 +157,7 @@ export default function MathGame() {
       console.log("Sent message:", submitPayload)
     } else {
       console.error("WebSocket is not open.")
+      toast.error("WebSocket is not open.")
     }
   }
 
@@ -292,21 +284,10 @@ export default function MathGame() {
       </div>
     </motion.div>
   )
-const navigate = useNavigate()
+
 
   return (
-
-    <div className="bg-[url(https://c.animaapp.com/fOFXwWPz/img/image-10.png)] bg-cover bg-center overflow-hidden h-screen flex flex-col">
-      <GameCompletionModal
-        isOpen={showGameCompleteModal}
-        onClose={() => setShowGameCompleteModal(false)}
-        player1={{ username: player1.username, rating: player1.rating, uid: player1.uid, ratingChanges: gameData.player1ratingchanges }}
-        player2={{username: player2.username, rating: player2.rating, uid: player2.uid, ratingChanges: gameData.player2ratingchanges }}
-        winner={gameData.winner}
-        uid={uid}
-        navigate={navigate}
-        
-      />
+    <div className="bg-[url(https://c.animaapp.com/fOFXwWPz/img/image-10.png)] bg-cover bg-center overflow-y-auto h-screen flex flex-col">
       {/* Logo and Header */}
       <img
         src="https://cdn.builder.io/api/v1/image/assets/TEMP/ca9e464b944ab22129b2e7d0da766b29064e4364"
@@ -317,15 +298,15 @@ const navigate = useNavigate()
 
 
       {/* Game Status Bar */}
-      {/* Game Status Bar */}
-      <div className="bg-black/60 backdrop-blur-sm border-b border-green-400/20 py-2 px-4 flex items-center justify-center">
+        {/* Game Status Bar */}
+        <div className="bg-black/60 backdrop-blur-sm border-b border-green-400/20 py-2 px-4 flex items-center justify-center">
         <div className="flex justify-evenly w-full items-center gap-3 text-white">
           <span className="font-bold text-lg flex items-center gap-2 ">
-            ROUND: <span className="text-green-400">{uid == player1.uid ? gameData.player1curround : gameData.player2curround}</span> /5
+            ROUND: <span className="text-green-400">{uid == player1.uid ? gameData.player1curround : gameData.player2curround   }</span> /5
           </span>
 
           <span className="font-bold text-lg flex items-center gap-2 ml-[350px]">
-            ROUND: <span className="text-red-400">{uid !== player1.uid ? gameData.player1curround : gameData.player2curround}</span> /5
+            ROUND: <span className="text-red-400">{uid !== player1.uid ? gameData.player1curround : gameData.player2curround  }</span> /5
           </span>
         </div>
       </div>
@@ -334,8 +315,8 @@ const navigate = useNavigate()
       <div className="flex-1 flex flex-col items-center text-white">
         {/* Players Section */}
         <div className="w-full max-w-5xl flex flex-wrap justify-between gap-4 mt-8">
-          {renderPlayer(uid == player1.uid ? player1 : player2, "green", uid == player1.uid ? gameData.player1points : gameData.player2points)}
-          {renderPlayer(uid !== player1.uid ? player1 : player2, "red", uid !== player1.uid ? gameData.player1points : gameData.player2points)}
+          {renderPlayer(uid == player1.uid ? player1 : player2 , "green", uid == player1.uid ? gameData.player1points : gameData.player2points )}
+          {renderPlayer(uid !== player1.uid ? player1 : player2 , "red", uid !== player1.uid ? gameData.player1points : gameData.player2points)}
         </div>
 
         {/* Current Question Section */}
@@ -416,23 +397,23 @@ const navigate = useNavigate()
               </div>
 
               <div className="flex flex-col gap-1 max-h-[25vh] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-green-500 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-green-500 [&::-webkit-scrollbar]:hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-transparent ">
-
                 {(uid == player1.uid ? gameData.player1questions : gameData.player2questions).map((somedata, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`grid grid-cols-[1fr_1fr_1fr] gap-4 items-center p-3 ${index === round
+                    className={`grid grid-cols-[1fr_1fr_1fr] gap-4 items-center p-3 ${
+                      index === round
                         ? "bg-green-900/20 border-l-4 border-l-green-500"
                         : index < round
                           ? "bg-black/40"
                           : "bg-black/20"
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 flex items-center justify-center">{getSymbol(index)}</div>
-                      <span className="font-medium text-white">{index}</span>
+                      <span className="font-medium text-white">{index+1}</span>
                     </div>
 
                     <div className="flex items-center gap-2 ml-1">
@@ -448,7 +429,7 @@ const navigate = useNavigate()
                           animate={{ opacity: 1 }}
                           className="flex items-center gap-2"
                         >
-                          <span className="font-mono text-green-100 ml-2">{uid == player1.uid ? gameData.player1solves[index - 1] : gameData.player2solves[index - 1]}</span>
+                          <span className="font-mono text-green-100 ml-2">{uid == player1.uid ? gameData.player1solves[index-1] : gameData.player2solves[index-1]}</span>
                         </motion.div>
                       ) : (
                         <span className="font-mono text-gray-400">------</span>

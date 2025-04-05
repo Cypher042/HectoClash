@@ -2,12 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, User, ArrowDown, ArrowUp } from 'lucide-react';
 
-
-const GameCompletionModal = ({ isOpen, onClose, player1, player2, winner,uid,navigate }) => {
+const GameCompletionModal = ({ isOpen, onClose, player1, player2, winner,uid }) => {
   if (!isOpen) return null;
 
   // Determine winner and loser data
-  const isPlayer1Winner = winner === player1.id;
+  const isPlayer1Winner = winner === player1.username;
   const winnerData = isPlayer1Winner ? player1 : player2;
   const loserData = isPlayer1Winner ? player2 : player1;
 
@@ -59,7 +58,7 @@ const GameCompletionModal = ({ isOpen, onClose, player1, player2, winner,uid,nav
             <div className="mt-3 text-xl font-bold text-white">{winnerData.username}</div>
           </div>
           {
-            uid == winner? (
+            player1.username !== player1.username ? (
               <div className="text-green-400 text-2xl font-semibold mb-2 flex items-center gap-2">
                 <Trophy size={20} /> YOU WON
               </div>
@@ -138,7 +137,7 @@ const GameCompletionModal = ({ isOpen, onClose, player1, player2, winner,uid,nav
             className="mt-5 text-2xl font-bold rounded-xl border-b-4 border-solid bg-green-300 cursor-pointer border-[none] border-b-green-600 h-[55px] text-black w-[201px] max-sm:w-full max-sm:max-w-[411px] hover:bg-green-600 transition-colors"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => window.location.assign("/gamearea")}
+            onClick={onClose}
           >
             Play Again 
           </motion.button>
@@ -148,7 +147,7 @@ const GameCompletionModal = ({ isOpen, onClose, player1, player2, winner,uid,nav
             className="mt-5 text-2xl font-bold rounded-xl border-b-4 border-solid bg-green-300 cursor-pointer border-[none] border-b-green-600 h-[55px] text-black w-[201px] max-sm:w-full max-sm:max-w-[411px] hover:bg-green-600 transition-colors"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/home", { replace: true })}
+            onClick={onClose}
           >
             Home
           </motion.button>
