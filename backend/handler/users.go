@@ -59,9 +59,17 @@ func Login(c *fiber.Ctx) error {
 			HTTPOnly: true,
 			Secure:   false,
 			SameSite: fiber.CookieSameSiteLaxMode,
-			Path:     "/api",
+			Path:     "/",
 		}
 		c.Cookie(cookie)
+		uid_cookie := &fiber.Cookie{
+			Name: "uid",
+			Value: uid,
+			HTTPOnly: false,
+			Secure: false,
+			Path:     "/",
+		}
+		c.Cookie(uid_cookie)
 		return c.Status(fiber.StatusOK).JSON(LoggedIn)
 	}
 }
