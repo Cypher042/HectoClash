@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"github.com/Hackfest-Hectoc/HectoClash/backend/database"
-	"github.com/Hackfest-Hectoc/HectoClash/backend/handler"
-	"github.com/Hackfest-Hectoc/HectoClash/backend/routes"
+	"github.com/SyncOrSink/HectoClash/backend/database"
+	"github.com/SyncOrSink/HectoClash/backend/handler"
+	"github.com/SyncOrSink/HectoClash/backend/routes"
 	"github.com/gofiber/fiber/v2"
 )
 

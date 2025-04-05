@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Hackfest-Hectoc/HectoClash/backend/config"
-	"github.com/Hackfest-Hectoc/HectoClash/backend/models"
+	"github.com/SyncOrSink/HectoClash/backend/config"
+	"github.com/SyncOrSink/HectoClash/backend/models"
 	"github.com/google/uuid"
 )
 

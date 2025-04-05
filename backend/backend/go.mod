@@ -1,4 +1,4 @@
-module github.com/Hackfest-Hectoc/HectoClash/backend
+module github.com/SyncOrSink/HectoClash/backend
 
 go 1.24
 

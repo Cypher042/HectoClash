@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/Hackfest-Hectoc/HectoClash/backend/database"
-	"github.com/Hackfest-Hectoc/HectoClash/backend/models"
+	"github.com/SyncOrSink/HectoClash/backend/database"
+	"github.com/SyncOrSink/HectoClash/backend/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 )

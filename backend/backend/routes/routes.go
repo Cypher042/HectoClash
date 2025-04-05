@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"github.com/Hackfest-Hectoc/HectoClash/backend/handler"
+	"github.com/SyncOrSink/HectoClash/backend/handler"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
