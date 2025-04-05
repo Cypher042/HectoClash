@@ -1,49 +1,29 @@
 package handler
 
 import (
+	"encoding/json"
 	"log"
-	"net/http"
-	"strings"
+	"time"
+
 	"github.com/Hackfest-Hectoc/HectoClash/backend/database"
+	"github.com/Hackfest-Hectoc/HectoClash/backend/models"
+	"github.com/gofiber/fiber/v2"
+	"github.com/redis/go-redis/v9"
 )
 
-func Register(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		JSONResponse(w, http.StatusBadRequest, ErrBadFormData)
-		return
+func UpdateLeaderboardinRedis(c *fiber.Ctx) error {
+
+	s, err := rdb.Get(ctx, LEADER_BOARD).Result()
+	if err == redis.Nil {
+		marsheledLead, err := json.Marshal(database.ReturnTop20())
+		if err != nil {
+			log.Println("could not marsh")
+		}
+		rdb.Set(ctx, LEADER_BOARD, marsheledLead, 60*time.Second)
+		s, _ = rdb.Get(ctx, LEADER_BOARD).Result()
 	}
+	var user []models.UserDetails
 
-	var user User
-	user.Username = strings.TrimSpace(r.FormValue("username"))
-	user.Password = r.FormValue("password")
-	user.Email = strings.ToLower(strings.TrimSpace(r.FormValue("email")))
-
-	if validationErr, ok := validate(user); !ok {
-		JSONResponse(w, http.StatusBadRequest, validationErr)
-		return
-	}
-
-	if check := database.Register(user.Username, user.Password, user.Email); !check {
-		JSONResponse(w, http.StatusInternalServerError, ErrRegFailure)
-		return
-	}
-
-	log.Printf("USER: %s REGISTERED\n", user.Username)
-	JSONResponse(w, http.StatusCreated, RegSuccess)
-}
-
-func Login(w http.ResponseWriter, r *http.Request) {
-	var user User
-	user.Username = r.FormValue("username")
-	user.Password = r.FormValue("password")
-	user.Email = r.FormValue("email")
-	if len(user.Email) > 0 {
-		user.Username = ""
-	}
-	if verifyUser := database.Verify(user.Username, user.Email, user.Password); !verifyUser {
-		JSONResponse(w, http.StatusUnauthorized, ErrInvalidCreds)
-		return
-	}
-	JSONResponse(w, http.StatusOK, LoggedIn)	
-
+	_ = json.Unmarshal([]byte(s), &user)
+	return (c.Status(fiber.StatusOK).JSON(user))
 }

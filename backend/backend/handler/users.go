@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SyncOrSink/HectoClash/backend/database"
-	"github.com/SyncOrSink/HectoClash/backend/models"
+	"github.com/Hackfest-Hectoc/HectoClash/backend/database"
+	"github.com/Hackfest-Hectoc/HectoClash/backend/models"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -23,6 +23,7 @@ func Register(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(validationErr)
 	}
 
+	user.Games = []string{}
 	if check := database.Register(user); !check {
 		return c.Status(fiber.StatusInternalServerError).JSON(ErrRegFailure)
 	}
