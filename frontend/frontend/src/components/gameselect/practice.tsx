@@ -1,132 +1,102 @@
-import GameCompletionModal from "./modal"
+"use client"
 
-import { useState, useEffect, useRef, use } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Input } from "../ui/input"
-import { CheckCircle2, Circle, Lock, Clock, Trophy, Zap, User, Cookie,Clipboard  } from "lucide-react"
-import axios from "axios"
+import { CheckCircle2, Circle, Lock, Clock, Trophy, Zap, User, Cookie } from "lucide-react"
 import Header from "./header"
-
 import toast from "react-hot-toast"
 
-
-
-export default function MathGame() {
+export default function Practice() {
   // Game state
-  let uid = ""
   const [expression, setExpression] = useState("")
   const [gameData, setGameData] = useState({
     "gid": "game123",
     "player_one": "player123",
-    "player_two": "player456",
-    "status": "status",
+    "status": "active",
     "player1expression": "",
-    "player2expression": "",
-    "player1solves": ["0", "0", "0", "0", "0"],
-    "player2solves": ["0", "0", "0", "0", "0"],
-    "player1questions": ["0", "0", "0", "0", "0"],
-    "player2questions": ["0", "0", "0", "0", "0"],
+    "player1solves": ["", "", "", "", ""],
+    "player1questions": ["", "", "", "", ""],
     "player1curround": 1,
-    "player2curround": 1,
     "player1points": 0,
-    "player2points": 0,
     "player1ratingchanges": 0,
-    "player2ratingchanges": 0,
     "noofrounds": 5,
-    "winner": "",
   })
   const [round, setRound] = useState(0)
-  const [question, setQuestion] = useState("666666")
-  const [player1, setPlayer1] = useState({ uid: "", username: "Anubhab", rating: 0 })
-  const [player2, setPlayer2] = useState({ uid: "", username: "Sagnik", rating: 0 })
-  const [showGameCompleteModal, setShowGameCompleteModal] = useState(false);
-
+  const [question, setQuestion] = useState("")
+  const [player1, setPlayer1] = useState({ uid: "", username: "Player", rating: 1200 })
+  const [gameHistory, setGameHistory] = useState([])
+  const [isCorrect, setIsCorrect] = useState(null)
 
   // Refs
-  const ws = useRef<WebSocket | null>(null)
   const submitButtonRef = useRef<HTMLButtonElement | null>(null)
-  function getCookie(name: string) {
-    const cookieValue = document.cookie
-      .split('; ')
-      .find(row => row.startsWith(name + '='))
-      ?.split('=')[1];
 
-    return cookieValue ? decodeURIComponent(cookieValue) : "";
-  }
-  uid = getCookie("uid")
-  const copySpectatorLink = () => {
-    const spectatorLink = `http://localhost:5173/spectator?gid=${gameData.gid}`;
-    navigator.clipboard.writeText(spectatorLink)
-      .then(() => toast.success("Spectator link copied! 📋"))
-      .catch(() => toast.error("Failed to copy link."));
-  };
-  // Initialize WebSocket connection and game data
+  // Initialize game when component mounts
   useEffect(() => {
-
-    ws.current = new WebSocket(`ws://localhost:8000/ws`)
-    let interval: ReturnType<typeof setInterval>
-
-    ws.current.onopen = () => {
-      console.log("WebSocket connection opened")
-    }
-
-    ws.current.onmessage = (event) => {
-      console.log("Received:", event.data)
-      try {
-        const data = JSON.parse(event.data)
-
-        if (data.title === "gameInit") {
-          setGameData(data.message)
-          gameInit(data.message)
-          interval = setInterval(() => {
-            getGameData()
-          }, 100)
-
-
-
-          // Initialize rounds history
-
-        }
-
-        if (data.title === "question") {
-          setQuestion(data.message.question)
-          setRound(data.message.number)
-          setRound(data.message.number - 1)
-
-          // Update rounds history with new question
-
-        }
-
-        if (data.title === "submitResponse") {
-          handleSubmitResponse(data.message)
-        }
-
-        if (data.title === "gameData") {
-          setGameData(data.message)
-          if (data.message.status === "completed") {
-            setShowGameCompleteModal(true)
-          }
-        }
-      } catch (error) {
-        console.error("Error parsing message:", error)
-      }
-    }
-
-    ws.current.onerror = (error) => {
-      console.error("WebSocket error:", error)
-    }
-
-    ws.current.onclose = () => {
-      console.log("WebSocket connection closed")
-      // navigate("/home")
-    }
-
-    return () => {
-      if (ws.current) ws.current.close()
-      clearInterval(interval)
-    }
+    initializeGame()
   }, [])
+
+  // Function to initialize the game
+  const initializeGame = () => {
+    const storedUsername = localStorage.getItem('username') || "Player"
+    const storedRating = parseInt(localStorage.getItem('rating') || "1200")
+
+    setPlayer1({
+      uid: "player1",
+      username: storedUsername,
+      rating: storedRating
+    })
+
+    // Initialize first question
+    generateNewQuestion(1)
+  }
+
+  // Function to generate a new question
+  const generateNewQuestion = (roundNumber) => {
+    const digits = Array.from({ length: 6 }, () => Math.floor(Math.random() * 9) + 1).join("")
+    setQuestion(digits)
+
+    // Update game data
+    const updatedGameData = { ...gameData }
+    updatedGameData.player1curround = roundNumber
+    updatedGameData.player1questions[roundNumber - 1] = digits
+    setGameData(updatedGameData)
+
+    setRound(roundNumber - 1)
+  }
+
+  // Function to evaluate mathematical expression safely
+  const evaluateExpression = (expr, digits) => {
+    try {
+      // Check if expression only uses the digits from the question
+      const digitsArray = digits.split("")
+      const expressionDigits = expr.replace(/[^0-9]/g, "").split("")
+
+      // Check if all required digits are used exactly once
+      if (expressionDigits.length !== digitsArray.length) return false
+
+      const sortedExprDigits = [...expressionDigits].sort()
+      const sortedDigits = [...digitsArray].sort()
+
+      if (JSON.stringify(sortedExprDigits) !== JSON.stringify(sortedDigits)) return false
+
+      // Check for invalid characters (now allowing ^ for exponent)
+      if (/[^0-9+\-*/().\^]/.test(expr)) return false
+
+      // Replace ^ with ** for JavaScript's exponent operator
+      const jsExpr = expr.replace(/\^/g, "**")
+
+      // Evaluate the expression
+      // eslint-disable-next-line no-eval
+      const result = eval(jsExpr)
+
+      // Check if result is 100
+      return Math.abs(result - 100) < 0.001
+    } catch (error) {
+      console.error("Error evaluating expression:", error)
+      return false
+    }
+  }
 
   // Button feedback functions
   const changeBackgroundColor = (color: string) => {
@@ -144,17 +114,62 @@ export default function MathGame() {
   }
 
   const handleSubmitResponse = (response: boolean) => {
+    setIsCorrect(response)
+
     if (response) {
-      toast.success("Correct answer!  🎉")
+      // Show success toast
+      toast.success("Correct!", {
+        duration: 2000,
+        style: {
+          background: 'rgba(0, 0, 0, 1)',
+          color: '#4ade80',
+          border: '1px solid #4ade80',
+        },
+        icon: '🎉',
+      })
+
       changeBackgroundColor("bg-green-500")
-      setTimeout(() => { console.log("hi") }, 200)
-      resetBackgroundColor("bg-green-500")
+      setTimeout(() => resetBackgroundColor("bg-green-500"), 200)
+
+      // Update game data
+      const updatedGameData = { ...gameData }
+      updatedGameData.player1solves[round] = expression
+      updatedGameData.player1points += 10
+      setGameData(updatedGameData)
+
+      // Move to next round if not at max rounds
+      if (gameData.player1curround < gameData.noofrounds) {
+        setTimeout(() => {
+          generateNewQuestion(gameData.player1curround + 1)
+          setExpression("")
+        }, 1000)
+      } else {
+        toast.success("Game complete! Final score: " + (gameData.player1points + 10), {
+          duration: 3000,
+          icon: '🏆',
+          style: {
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: '#4ade80',
+            border: '1px solid #4ade80',
+          },
+        })
+      }
     } else {
-      toast.error("Wrong answer!  ❌")
+      // Show error toast
+      toast.error("Incorrect. Try again!", {
+        duration: 2000,
+        style: {
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: '#f87171',
+          border: '1px solid #ef4444',
+        },
+        icon: '❌',
+      })
+
       changeBackgroundColor("bg-red-500")
-      setTimeout(() => { console.log("hi") }, 200)
-      resetBackgroundColor("bg-red-500")
+      setTimeout(() => resetBackgroundColor("bg-red-500"), 200)
     }
+
     if (submitButtonRef.current) {
       submitButtonRef.current.disabled = false
     }
@@ -165,54 +180,38 @@ export default function MathGame() {
       submitButtonRef.current.disabled = true
     }
 
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      const submitPayload = {
-        title: "submit",
-        message: expression,
+    // Check if expression is empty
+    if (!expression.trim()) {
+      toast.error("Please enter an expression", {
+        duration: 2000,
+        style: {
+          background: 'rgba(0, 0, 0, 0.8)',
+          color: '#f87171',
+          border: '1px solid #ef4444',
+        },
+      })
+      if (submitButtonRef.current) {
+        submitButtonRef.current.disabled = false
       }
-      ws.current.send(JSON.stringify(submitPayload))
-      console.log("Sent message:", submitPayload)
-    } else {
-      console.error("WebSocket is not open.")
+      return
     }
-    setExpression("")
-  }
 
-  const gameInit = async (data: any) => {
-    try {
-      const response1 = await axios.get(`http://localhost:8000/api/player/${data.player_one}`)
-      setPlayer1(response1.data)
+    const isValid = evaluateExpression(expression, question)
+    handleSubmitResponse(isValid)
 
-      const response2 = await axios.get(`http://localhost:8000/api/player/${data.player_two}`)
-      setPlayer2(response2.data)
-    } catch (error) {
-      console.error("Error fetching player data:", error)
-    }
+    // Update player expression in game data
+    const updatedGameData = { ...gameData }
+    updatedGameData.player1expression = expression
+    setGameData(updatedGameData)
   }
 
   const handleExpressionChange = (newExpression: string) => {
     setExpression(newExpression)
 
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      const submitPayload = {
-        title: "expression",
-        message: newExpression,
-      }
-      ws.current.send(JSON.stringify(submitPayload))
-      console.log("Sent message:", submitPayload)
-    } else {
-      console.error("WebSocket is not open.")
-    }
-  }
-
-  const getGameData = () => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      const submitPayload = {
-        title: "gameData",
-        message: "hi",
-      }
-      ws.current.send(JSON.stringify(submitPayload))
-    }
+    // Update player expression in game data
+    const updatedGameData = { ...gameData }
+    updatedGameData.player1expression = newExpression
+    setGameData(updatedGameData)
   }
 
   // Helper function to render round status icon
@@ -292,31 +291,18 @@ export default function MathGame() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          {/* <div className="text-sm text-green-400 font-semibold flex items-center gap-1">
+          <div className="text-sm text-green-400 font-semibold flex items-center gap-1">
             <Trophy size={14} />
             POINTS
           </div>
-          <div className={`text-3xl font-bold text-${color}-400`}>{points}</div> */}
+          <div className={`text-3xl font-bold text-${color}-400`}>{gameData.player1points}</div>
         </motion.div>
       </div>
     </motion.div>
   )
-  const navigate = useNavigate()
 
   return (
-
-    <div className="bg-[url(https://c.animaapp.com/fOFXwWPz/img/image-10.png)] bg-cover bg-center overflow-hidden h-screen flex flex-col">
-      <GameCompletionModal
-        isOpen={showGameCompleteModal}
-        onClose={() => setShowGameCompleteModal(false)}
-        player1={{ username: player1.username, rating: player1.rating, uid: player1.uid, ratingChange: gameData.player1ratingchanges }}
-        player2={{ username: player2.username, rating: player2.rating, uid: player2.uid, ratingChange: gameData.player2ratingchanges }}
-        winner={gameData.winner}
-        uid={uid}
-        navigate={navigate}
-        page="gamearea"
-
-      />
+    <div className="bg-[url(https://c.animaapp.com/fOFXwWPz/img/image-10.png)] bg-cover bg-center overflow-y-auto h-screen flex flex-col">
       {/* Logo and Header */}
       <img
         src="https://cdn.builder.io/api/v1/image/assets/TEMP/ca9e464b944ab22129b2e7d0da766b29064e4364"
@@ -325,32 +311,25 @@ export default function MathGame() {
       />
       <Header></Header>
 
-
-      {/* Game Status Bar */}
       {/* Game Status Bar */}
       <div className="bg-black/60 backdrop-blur-sm border-b border-green-400/20 py-2 px-4 flex items-center justify-center">
         <div className="flex justify-evenly w-full items-center gap-3 text-white">
           <span className="font-bold text-lg flex items-center gap-2 ">
-            ROUND: <span className="text-green-400">{uid == player1.uid ? gameData.player1curround : gameData.player2curround}</span> /5
-          </span>
-
-          <span className="font-bold text-lg flex items-center gap-2 ml-[350px]">
-            ROUND: <span className="text-red-400">{uid !== player1.uid ? gameData.player1curround : gameData.player2curround}</span> /5
+            ROUND: <span className="text-green-400">{ gameData.player1curround  }</span> /5
           </span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center text-white">
+      <div className=" flex flex-col items-center justify-center text-white">
         {/* Players Section */}
-        <div className="w-full max-w-5xl flex flex-wrap justify-between gap-4 mt-8">
-          {renderPlayer(uid == player1.uid ? player1 : player2, "green", uid == player1.uid ? gameData.player1points : gameData.player2points)}
-          {renderPlayer(uid !== player1.uid ? player1 : player2, "red", uid !== player1.uid ? gameData.player1points : gameData.player2points)}
+        <div className="w-full max-w-5xl gap-4 mt-8">
+          {renderPlayer( player1 , "green",  gameData.player1points)}
         </div>
 
         {/* Current Question Section */}
         <motion.div
-          className="mt-2  mb-8 text-center"
+          className="mt-2 mb-8 text-center"
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{
@@ -359,30 +338,8 @@ export default function MathGame() {
             damping: 20,
           }}
         >
-
           {renderQuestion(question)}
         </motion.div>
-
-        {/* Player Expressions
-        <div className="w-full max-w-4xl flex flex-wrap justify-between gap-4 mt-8">
-          <div className="w-full md:w-[48%] bg-black/30 backdrop-blur-sm rounded-xl border border-green-400/20 p-3">
-            <div className="text-center mb-2">
-              <div className="text-green-400 text-sm font-semibold">PLAYER 1 EXPRESSION</div>
-            </div>
-            <div className="text-center text-white text-lg font-mono truncate">
-              {gameData.player1expression || "..."}
-            </div>
-          </div>
-
-          <div className="w-full md:w-[48%] bg-black/30 backdrop-blur-sm rounded-xl border border-red-400/20 p-3">
-            <div className="text-center mb-2">
-              <div className="text-red-400 text-sm font-semibold">PLAYER 2 EXPRESSION</div>
-            </div>
-            <div className="text-center text-white text-lg font-mono truncate">
-              {gameData.player2expression || "..."}
-            </div>
-          </div>
-        </div> */}
 
         {/* Input Section */}
         <motion.div
@@ -391,28 +348,20 @@ export default function MathGame() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
         >
-          <motion.div className="w-full flex justify-center gap-2 items-center" whileHover={{ scale: 1.02 }}>
+          <motion.div className="w-full" whileHover={{ scale: 1.02 }}>
             <div className="relative">
               <Input
-                className="text-center w-[360px] pl-4 ml-24 mr-10 h-[50px] rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 text-white text-xl bg-black/50 border-white"
+                className="text-center w-full h-[50px] rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 text-white text-xl bg-black/50 border-white"
                 placeholder="Type your Expression..."
                 value={expression}
                 onChange={(e) => handleExpressionChange(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSubmit()
+                  if (e.key === 'Enter') {
+                    handleSubmit();
                   }
                 }}
               />
             </div>
-            <div className="flex justify-center mt-2">
-          <button
-            onClick={copySpectatorLink}
-            className="px-4 py-2 text-sm font-semibold bg-gray-400 text-black rounded-full hover:bg-green-500 transition-all"
-          >
-            <Clipboard></Clipboard>
-          </button>
-        </div>
           </motion.div>
           <motion.div className="w-full flex justify-center mt-4" whileHover={{ scale: 1.02 }}>
             <button
@@ -441,23 +390,23 @@ export default function MathGame() {
               </div>
 
               <div className="flex flex-col gap-1 max-h-[25vh] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-green-500 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-green-500 [&::-webkit-scrollbar]:hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-transparent ">
-
-                {(uid == player1.uid ? gameData.player1questions : gameData.player2questions).map((somedata, index) => (
+                {(gameData.player1questions).map((somedata, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`grid grid-cols-[1fr_1fr_1fr] gap-4 items-center p-3 ${index === round
-                      ? "bg-green-900/20 border-l-4 border-l-green-500"
-                      : index < round
-                        ? "bg-black/40"
-                        : "bg-black/20"
-                      }`}
+                    className={`grid grid-cols-[1fr_1fr_1fr] gap-4 items-center p-3 ${
+                      index === round
+                        ? "bg-green-900/20 border-l-4 border-l-green-500"
+                        : index < round
+                          ? "bg-black/40"
+                          : "bg-black/20"
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 flex items-center justify-center">{getSymbol(index)}</div>
-                      <span className="font-medium text-white">{index}</span>
+                      <span className="font-medium text-white">{index+1}</span>
                     </div>
 
                     <div className="flex items-center gap-2 ml-1">
@@ -473,7 +422,7 @@ export default function MathGame() {
                           animate={{ opacity: 1 }}
                           className="flex items-center gap-2"
                         >
-                          <span className="font-mono text-green-100 ml-2">{uid == player1.uid ? gameData.player1solves[index] : gameData.player2solves[index]}</span>
+                          <span className="font-mono text-green-100 ml-2">{ gameData.player1solves[index] }</span>
                         </motion.div>
                       ) : (
                         <span className="font-mono text-gray-400">------</span>
@@ -489,4 +438,3 @@ export default function MathGame() {
     </div>
   )
 }
-

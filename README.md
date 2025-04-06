@@ -54,4 +54,42 @@ Even before the hackathon formally started, we had already gained a lot—rangin
 
 ## Gameplay
 
+## 📚 What is Hectoc?
+
+**Hectoc** is a game format created by Yusnier Viera where players are given a 6-digit sequence using digits 1–9 (e.g., `123456`). The goal is to insert any combination of operations (`+`, `-`, `×`, `÷`, `^`) and parentheses between the digits — without rearranging them — to form a valid expression that evaluates to exactly 100.
+
+✅ **Example**:  
+Input: `367626`  
+Solution: `(36+76-2*6) = 100`
+
+## 🎮 Gameplay Overview
+
+- **Real-Time Duels**  
+  Challenge another player to a live battle where both race against time to find the correct solution.
+
+- **Dynamic Puzzle Generation**  
+  Every match generates a unique six-digit sequence, ensuring no two duels are ever the same.
+
+- **Leaderboards & Rankings**  
+  Track wins, streaks, speed, and accuracy. Climb the ranks and prove your mental math mastery.
+
+- **Spectator Mode**
+  Watch ongoing duels, learn from top players, and cheer for your favorites.
+
+- **Educational Insights** _
+  Post-game feedback shows common mistakes, and time-based analytics for learning and improvement.
+
+---
+## 🛠️ Tech Stack
+
+| Component         | Technology           |
+|------------------|----------------------|
+| Language          | Go (Golang) |
+| Real-Time Backend |  GoFiber / WebSockets|
+| Frontend          |  ReactJS, Framer Motion, Tailwind CSS, |
+| Database          | MongoDB and Redis |
+| Deployment        | Docker, Kubernetes |
+
+---
+
 
