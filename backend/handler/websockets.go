@@ -25,10 +25,7 @@ type resp struct {
 	Message any    `json:"message"`
 }
 
-// type initializeGame struct {
-// 	Title   string `json:"title"`
-// 	message string `json:"message"`
-// }
+
 
 func PublishMessage(gid string, message resp) error {
 	msg, _ := json.Marshal(message)
@@ -80,15 +77,9 @@ func GetGameObject(key string) models.Game {
 	return game
 }
 
-func ExistsInQueue(uid string) bool {
-	_, err := rdb.ZScore(ctx, QUEUE_KEY, uid).Result()
-	if err == redis.Nil {
-		return false
-	} else if err != nil {
-		return false
-	} else {
-		return true
-	}
+func GameExists(uid string) bool {
+	_, err := rdb.Get(ctx, uid).Result()
+	return err != redis.Nil
 }
 
 func Connect() {
@@ -99,14 +90,14 @@ func Connect() {
 	})
 }
 
-func SubscribeToChannel(pubsub *redis.PubSub, c *websocket.Conn) {
-	for val := range pubsub.Channel() {
-		log.Println("Sending Message: ", val.Payload)
-		c.WriteJSON(Response{"message", val.Payload})
-	}
-}
-
 func WebSocketHandler(c *websocket.Conn) {
+
+	// solves := 0
+
+	// wrongsolves :=0
+	
+
+
 	uid := c.Cookies("uid")
 
 	if uid == "" {
@@ -114,10 +105,12 @@ func WebSocketHandler(c *websocket.Conn) {
 		return
 	}
 
-	if check := AddtoQueue(uid); !check {
-		log.Println("ALERT: Failure in Redis Connection most probably.")
-		c.WriteJSON(Response{"failure", "Backend Error."})
-		return
+	if check := GameExists(uid); !check {
+		if check := AddtoQueue(uid); !check {
+			log.Println("ALERT: Failure in Redis Connection most probably.")
+			c.WriteJSON(Response{"failure", "Backend Error."})
+			return
+		}
 	}
 
 	var gid string
@@ -129,15 +122,12 @@ func WebSocketHandler(c *websocket.Conn) {
 		}
 	}
 
-	pubsub := rdb.Subscribe(ctx, gid)
-
-	// Close PubSub
-	defer pubsub.Close()
-
-	// Delete redis entry
-	defer rdb.Del(ctx, uid)
-
-	// go SubscribeToChannel(pubsub, c)
+	var game models.Game
+	p2, _ := rdb.Get(ctx, gid).Result()
+	json.Unmarshal([]byte(p2), &game)
+	defer rdb.Del(ctx, game.Playerone)
+	defer rdb.Del(ctx, game.Playertwo)
+	defer rdb.Del(ctx, gid)
 
 	gamedetails, err := rdb.Get(ctx, gid).Result()
 	if err != nil {
@@ -145,15 +135,13 @@ func WebSocketHandler(c *websocket.Conn) {
 		return
 	}
 
-	var GameClient models.GameClient
 	var Game models.Game
 
 	json.Unmarshal([]byte(gamedetails), &Game)
-	json.Unmarshal([]byte(gamedetails), &GameClient)
 
 	questions := Game.Questions
 
-	if err := c.WriteJSON(models.Response{Topic: "gameInit", Message: GameClient}); err != nil {
+	if err := c.WriteJSON(models.Response{Topic: "gameInit", Message: game}); err != nil {
 		log.Println(err)
 		return
 	}
@@ -163,8 +151,7 @@ func WebSocketHandler(c *websocket.Conn) {
 	Game.Player1Questions[count] = questions[count]
 	Game.Player2Questions[count] = questions[count]
 	gjson, _ := json.Marshal(Game)
-	rdb.Set(ctx, gid, gjson, time.Minute*10)
-
+	rdb.SetXX(ctx, gid, gjson, time.Minute*10).Err()
 	if err := c.WriteJSON(models.Response{Topic: "question", Message: models.Round{Number: count + 1, Question: question}}); err != nil {
 		log.Println(err)
 		return
@@ -173,21 +160,32 @@ func WebSocketHandler(c *websocket.Conn) {
 	for {
 		var message resp
 		if err := c.ReadJSON(&message); err != nil {
-			log.Println("ERROR: Unable to ReadJSON object from websocket. 1", err)
+			log.Println("ERROR: Unable to ReadJSON object from websocket.", err)
 			return
 		}
 
 		switch message.Title {
 		case "submit":
-			if count > 4 {
+			if count == 5{
 				continue
 			}
 			if check := handleSubmitExpression(message.Message.(string), questions[count]); !check {
-				if err := c.WriteJSON(models.Response{Topic: "submitResponse", Message: false}); err != nil {
-					log.Println("error occurred..", err)
+				err := c.WriteJSON(models.Response{Topic: "submitResponse", Message: false}) 
+				if(Game.Playerone == uid){
+					Game.Player1WrongSolves++
+				}else{
+					Game.Player2WrongSolves++
+				}
+				if err != nil {
+					log.Println("error occurred..", err)	
 					return
 				}
 			} else {
+				if(Game.Playerone == uid){
+					Game.Player1RightSolves++
+				}else{
+					Game.Player2RightSolves++
+				}
 				count++
 				gamedetails, err = rdb.Get(ctx, gid).Result()
 				if err != nil {
@@ -196,54 +194,74 @@ func WebSocketHandler(c *websocket.Conn) {
 				}
 				json.Unmarshal([]byte(gamedetails), &Game)
 				if Game.Playerone == uid {
-					Game.Player1CurrRound = int64(count) + 1
 					if count <= 4 {
+						Game.Player1CurrRound = int64(count) + 1
 						Game.Player1Questions[count] = questions[count]
 					}
 					Game.Player1Solves[count-1] = message.Message.(string)
 				} else {
-					// Update this
-					Game.Player2CurrRound = int64(count) + 1
+
 					if count <= 4 {
+						Game.Player2CurrRound = int64(count) + 1
 						Game.Player2Questions[count] = questions[count]
 					}
+
 					Game.Player2Solves[count-1] = message.Message.(string)
 				}
 				log.Printf("%+v", Game)
 				gjson, _ := json.Marshal(Game)
-				rdb.Set(ctx, gid, gjson, time.Minute*10)
+				rdb.SetXX(ctx, gid, gjson, time.Minute*10)
 				if err := c.WriteJSON(models.Response{Topic: "submitResponse", Message: true}); err != nil {
+					log.Println("ERROR: ", err)
 					log.Println("error occurred..", err)
 					return
 				}
 				if count <= 4 {
 					if err := c.WriteJSON(models.Response{Topic: "question", Message: models.Round{Number: count + 1, Question: questions[count]}}); err != nil {
-						log.Println(err)
+						log.Println("ERROR: ", err)
 						return
 					}
 				}
 				if count == 5 {
-					gamedetails, _ := rdb.Get(ctx, gid).Result()
+					gamedetails, err := rdb.Get(ctx, gid).Result()
+					if err != nil {
+						log.Println("ERROR: ", err)
+						return
+					}
 					json.Unmarshal([]byte(gamedetails), &Game)
 					if Game.Status != "completed" {
 						Game.Status = "completed"
+						Game.EndTime = time.Now().Unix()
 						Game.Winner = uid
-						gjson, _ := json.Marshal(Game)
-						rdb.Set(ctx, gid, gjson, time.Minute*10)
+						database.AddGameToPlayer(Game.Playerone, Game)
+						database.AddGameToPlayer(Game.Playertwo, Game)
 						winner := database.GetUserFromID(uid)
 						var player string
 						if uid == Game.Playerone {
-							player = Game.Playerone
-						} else {
 							player = Game.Playertwo
+						} else {
+							player = Game.Playerone
 						}
 						loser := database.GetUserFromID(player)
-						GiveElo(&winner, &loser)
+						winnerRatingChange, loserRatingChange := GiveElo(&winner, &loser)
+						if (Game.Winner == Game.Playerone) {
+							Game.Player1RatingChanges = winnerRatingChange
+							Game.Player2RatingChanges = loserRatingChange
+						} else {
+							Game.Player2RatingChanges = winnerRatingChange
+							Game.Player1RatingChanges = loserRatingChange
+						}
+						gjson, _ := json.Marshal(Game)
+						rdb.SetXX(ctx, gid, gjson, time.Minute*10)
+						database.AddGameRecord(&Game)
 					}
 				}
 			}
 		case "expression":
-			gamedetails, _ = rdb.Get(ctx, gid).Result()
+			gamedetails, err = rdb.Get(ctx, gid).Result()
+			if err != nil {
+				return
+			}
 			json.Unmarshal([]byte(gamedetails), &Game)
 			if Game.Playerone == uid {
 				Game.Player1Expression = message.Message.(string)
@@ -251,13 +269,47 @@ func WebSocketHandler(c *websocket.Conn) {
 				Game.Player2Expression = message.Message.(string)
 			}
 			gjson, _ := json.Marshal(Game)
-			rdb.Set(ctx, gid, gjson, time.Minute*10)
-			log.Println("expr")
+			rdb.SetXX(ctx, gid, gjson, time.Minute*10)
 		case "gameData":
-			gamedetails, _ = rdb.Get(ctx, gid).Result()
-			json.Unmarshal([]byte(gamedetails), &GameClient)
-			if err := c.WriteJSON(models.Response{Topic: "gameData", Message: GameClient}); err != nil {
+			gamedetails, err = rdb.Get(ctx, gid).Result()
+			if err != nil {
+				return 
+			}
+			json.Unmarshal([]byte(gamedetails), &Game)
+			if err := c.WriteJSON(models.Response{Topic: "gameData", Message: Game}); err != nil {
 				log.Println("Error writing to websocket, ", err)
+				return
+			}
+		}
+	}
+}
+
+func Spectate(c *websocket.Conn) {
+	gid := c.Query("gid")
+	
+	if gamedata, err := rdb.Get(ctx, gid).Result(); err != nil {
+		c.Close()
+	} else {
+		var gamejson models.Game
+		json.Unmarshal([]byte(gamedata), &gamejson)
+		if err := c.WriteJSON(models.Response{Topic: "gameInit", Message: gamejson}); err != nil {
+			log.Println(err)
+			return
+		}
+	}
+
+	var game models.Game
+	for {
+		message := new(resp)
+		if err := c.ReadJSON(message); err != nil {
+			log.Println(err)
+			return
+		}
+		if message.Title == "gameData" {
+			stringform, _ := rdb.Get(ctx, gid).Result()
+			json.Unmarshal([]byte(stringform), &game)
+			if err := c.WriteJSON(models.Response{Topic: "gameData", Message: game}); err != nil {
+				log.Println(err)
 				return
 			}
 		}
