@@ -1,77 +1,49 @@
 package handler
 
 import (
-	"encoding/json"
 	"log"
-	"time"
-
-	"github.com/SyncOrSink/HectoClash/backend/database"
-	"github.com/SyncOrSink/HectoClash/backend/models"
-	"github.com/gofiber/fiber/v2"
-	"github.com/redis/go-redis/v9"
+	"net/http"
+	"strings"
+	"github.com/Hackfest-Hectoc/HectoClash/backend/database"
 )
 
-func GetProfilePageStuff(c *fiber.Ctx) error{
-
-	id := c.Params("id")
-	user := database.GetprofilefromMongo(id)
-	// userw , _:= database.GetGamesWithWins(c.Params("id"))
-	// v:= {id:user,3:userw}
-
-	return c.Status(fiber.StatusOK).JSON(user)
-}
-func GamesAll(c *fiber.Ctx) error{
-
-	// id := c.Params("id")
-	user,  err := database.GetGamesMongo()
-	if(err!=nil){
-		log.Println(err)
+func Register(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		JSONResponse(w, http.StatusBadRequest, ErrBadFormData)
+		return
 	}
-	// userw , _:= database.GetGamesWithWins(c.Params("id"))
-	// v:= {id:user,3:userw}
 
-	return c.Status(fiber.StatusOK).JSON(user)
-}
+	var user User
+	user.Username = strings.TrimSpace(r.FormValue("username"))
+	user.Password = r.FormValue("password")
+	user.Email = strings.ToLower(strings.TrimSpace(r.FormValue("email")))
 
-func UpdateLeaderboardinRedis(c *fiber.Ctx) error {
-
-	s, err := rdb.Get(ctx, LEADER_BOARD).Result()
-	if err == redis.Nil {
-		marsheledLead, err := json.Marshal(database.ReturnTop20())
-		if err != nil {
-			log.Println("could not marsh")
-		}
-		rdb.Set(ctx, LEADER_BOARD, marsheledLead, 60*time.Second)
-		s, _ = rdb.Get(ctx, LEADER_BOARD).Result()
+	if validationErr, ok := validate(user); !ok {
+		JSONResponse(w, http.StatusBadRequest, validationErr)
+		return
 	}
-	var user []models.UserDetails
 
-	_ = json.Unmarshal([]byte(s), &user)
-	return (c.Status(fiber.StatusOK).JSON(user))
-}
-
-func GetMatches(c *fiber.Ctx) error {
-
-	user , err:= database.GetNoOfMatches(c.Params("id"))
-
-	if err!= nil{
-		log.Println("couldnt retrive from mongo")
-		return err
+	if check := database.Register(user.Username, user.Password, user.Email); !check {
+		JSONResponse(w, http.StatusInternalServerError, ErrRegFailure)
+		return
 	}
-	
-	return (c.Status(fiber.StatusOK).JSON(user))
+
+	log.Printf("USER: %s REGISTERED\n", user.Username)
+	JSONResponse(w, http.StatusCreated, RegSuccess)
 }
 
-func GetWinsStruct(c *fiber.Ctx) error {
-
-	user , err:= database.GetGamesWithWins(c.Params("id"))
-
-	if err!= nil{
-		log.Println("couldnt retrive from mongo")
-		return err
+func Login(w http.ResponseWriter, r *http.Request) {
+	var user User
+	user.Username = r.FormValue("username")
+	user.Password = r.FormValue("password")
+	user.Email = r.FormValue("email")
+	if len(user.Email) > 0 {
+		user.Username = ""
 	}
-	
-	return (c.Status(fiber.StatusOK).JSON(user))
+	if verifyUser := database.Verify(user.Username, user.Email, user.Password); !verifyUser {
+		JSONResponse(w, http.StatusUnauthorized, ErrInvalidCreds)
+		return
+	}
+	JSONResponse(w, http.StatusOK, LoggedIn)	
+
 }
-
-

@@ -2,27 +2,28 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"time"
 
-	"github.com/SyncOrSink/HectoClash/backend/database"
-	"github.com/SyncOrSink/HectoClash/backend/handler"
-	"github.com/SyncOrSink/HectoClash/backend/routes"
-	"github.com/gofiber/fiber/v2"
+	"github.com/Hackfest-Hectoc/HectoClash/backend/database"
+	"github.com/Hackfest-Hectoc/HectoClash/backend/routes"
+	"github.com/gorilla/mux"
 )
 
 func main() {
 	log.Println("Connecting to DB.")
 	disconnect := database.Connect()
 	defer disconnect()
-	handler.Connect()
 	log.Println("Connected to DB.")
 	log.Println("Starting Server...")
-	database.CreateLeaderBoardIndex()
-	log.Println("LeaderBoard")
-	app := fiber.New(fiber.Config{
-		StrictRouting: true,
-		AppName: "HectoClash",
-		EnablePrintRoutes: true,
-	})
-	routes.SetupRoutes(app)
-	app.Listen(":8000")
+	r := mux.NewRouter()
+	routes.SetupRoutes(r)
+	srv := &http.Server{
+		Handler: r,
+		Addr:    "127.0.0.1:8000",
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+	log.Fatal(srv.ListenAndServe())
 }
