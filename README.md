@@ -105,5 +105,5 @@ Output: `(36 + 76 - 2 × 6) = 100`
 
 ## Submissions
 
-
+https://youtu.be/LvIrdTsE52I
 ---
