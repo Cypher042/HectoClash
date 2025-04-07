@@ -1,96 +1,108 @@
 # HectoClash
 
-A project made by....
-
-## Problem Statement
-
-Traditional mental math games often lack competitive and interactive elements, reducing user engagement and limiting their educational value. Existing platforms may offer puzzles and challenges but fail to provide real-time head-to-head competition, which can significantly enhance motivation and learning. The absence of live competition, rankings, and post-game analysis makes it difficult for users to track progress and improve their skills dynamically.
-
-## About Hectoc
-
-Hectoc, a mental calculation game, offers a unique challenge where players must strategically use mathematical operations on a six-digit sequence to reach 100. However, there is currently no competitive platform that enables real-time duels based on Hectoc, missing an opportunity to gamify learning in a stimulating way.
-
-## Solution
-
- -  Players can compete in online duels:
-    - First to 3 or 5 Solves
-        - In this mode, players compete to be the first to solve 3 or 5 puzzles correctly.
-        - The puzzles will appear one by one, and players must solve them as quickly as possible. 
-    - Most solves in 5 minutes:
-        - Players have 5 minutes to solve as many puzzles as possible.
-        - Instead of direct competition against a single player, this format allows players to focus on efficiency and endurance.
-
- -  Battle Royale Arena
-    This is a high-stakes, survival-style competition where multiple players enter, and every minute, the lowest 10-15% of players are eliminated. The game continues until only one player remains.
-
-    How it Works: **FIX THIS**
-    - All players start simultaneously.
-    - The bottom 10-15% of performers are eliminated every minute.
-    - The final 5 players enter a “sudden death” phase, where one mistake results in elimination.
+A project made by ..
 
 
- - Engagement Features(Live Spectator Interaction)
-    - Spectators watching a match can send emoji reactions and messages to encourage or players.
-    - Boosts social engagement, making watching a match as exciting as playing.
+during HackFest 2025
+**HectoClash** is a real-time, competitive mental math game inspired by the Hectoc format. It brings together high-speed calculation, strategic thinking, and engaging multiplayer gameplay to create an educational yet thrilling experience.
 
- - Practice Mode
-    - A structured progression system focusing on specific mathematical operations (addition, multiplication, pattern recognition, etc.).
+---
 
-## TechStack
+## ❓ Problem Statement
 
+Traditional mental math games often lack real-time competition, interactive elements, and post-game analysis—resulting in lower engagement and limited learning opportunities. There’s a need for a platform that combines education with high-energy competition to make mental math exciting, trackable, and social.
 
+---
 
+## 💡 About Hectoc
 
-## Before the Hackathon
+**Hectoc** is a mental math challenge in which players are given a six-digit number (e.g., `123456`) and must insert any combination of mathematical operations (`+`, `-`, `×`, `÷`, `^`) and parentheses to make the expression evaluate to exactly 100.
 
-When we initially came across this problem statement, we were immediately attracted to it since it brought together creativity, challenge, and technical skills from the real world. The concept of creating a multiplayer game that was not only enjoyable but also scalable was like the ideal opportunity to challenge ourselves and gain knowledge.
+> ✅ *Example:*  
+> Input: `367626`  
+> Output: `(36 + 76 - 2 × 6) = 100`
 
-This was our first experience building a multiplayer game, and the learning curve was steep—but incredibly rewarding. We delved deep into what makes multiplayer experiences responsive and smooth, investigating technologies such as WebSockets and Pub/Sub systems to manage real-time communication between players, because the problem statement itself focused so much on scalability, we chose to do more than simply create the game—we wanted to learn how to scale it. That brought us to Docker and Kubernetes, where we learned about containerization and orchestration and how they can be used to deploy and run applications in a production-ready, scalable manner.
+Despite its educational value, there is no competitive platform that enables **real-time duels** using Hectoc-style challenges—until now.
 
-We also learned Go (Golang), not only because it was among the preferred tech stack, but also because its concurrency model and performance made it an ideal choice for constructing efficient backend systems.
+---
 
-Even before the hackathon formally started, we had already gained a lot—ranging from real-time systems and multiplayer architecture to scalable deployment techniques. That foundation played a big part in how we constructed and designed our project.
+## 🚀 Solution
 
+### 🎯 Game Modes
 
-## Gameplay
+- **Duels**
+  - *First to 5 Solves:*  
+    Players compete head-to-head. The first to solve 5 puzzles correctly wins.  
+    Supports both drag-and-drop interaction for touchscreen devices and traditional mouse/keyboard input for desktop users.
 
-## 📚 What is Hectoc?
+- **Battle Royale** *(Coming Soon)*  
+  A larger-scale mode where many players compete simultaneously. Solve quickly to survive—last one standing wins!
 
-**Hectoc** is a game format created by Yusnier Viera where players are given a 6-digit sequence using digits 1–9 (e.g., `123456`). The goal is to insert any combination of operations (`+`, `-`, `×`, `÷`, `^`) and parentheses between the digits — without rearranging them — to form a valid expression that evaluates to exactly 100.
+- **Practice Mode**  
+  Sharpen your skills at your own pace. No pressure, just you and the puzzles. Great for warmups and solo improvement.
 
-✅ **Example**:  
-Input: `367626`  
-Solution: `(36+76-2*6) = 100`
+---
+
+## 👥 Engagement Features
+
+- **Live Spectator Interaction**
+  - Spectators can watch matches in real-time.
+
+- **Leaderboards & Rankings**
+  - Track your wins, streaks, and speed.
+  - Climb global leaderboards and improve your skills.
+
+- **Post-Game Analytics**
+  - Review common mistakes and time-based performance insights to improve over time.
+
+---
 
 ## 🎮 Gameplay Overview
 
-- **Real-Time Duels**  
-  Challenge another player to a live battle where both race against time to find the correct solution.
-
-- **Dynamic Puzzle Generation**  
-  Every match generates a unique six-digit sequence, ensuring no two duels are ever the same.
-
-- **Leaderboards & Rankings**  
-  Track wins, streaks, speed, and accuracy. Climb the ranks and prove your mental math mastery.
-
-- **Spectator Mode**
-  Watch ongoing duels, learn from top players, and cheer for your favorites.
-
-- **Educational Insights** _
-  Post-game feedback shows common mistakes, and time-based analytics for learning and improvement.
+- Real-time, fast-paced duels
+- Unique puzzles generated for every match
+- Dynamic elimination modes to raise the stakes
+- Multiplayer-first experience with smooth, responsive interactions
 
 ---
+
 ## 🛠️ Tech Stack
 
-| Component         | Technology           |
-|------------------|----------------------|
-| Language          | Go (Golang) |
-| Real-Time Backend |  GoFiber / WebSockets|
-| Frontend          |  ReactJS, Framer Motion, Tailwind CSS, |
-| Database          | MongoDB and Redis |
-| Deployment        | Docker, Kubernetes |
+| Component          | Technology                         |
+|-------------------|------------------------------------|
+| Language           | Go (Golang)                        |
+| Real-Time Backend  | GoFiber, WebSockets                |
+| Frontend           | ReactJS, Framer Motion, Tailwind CSS |
+| Database           | MongoDB, Redis                     |
+| Deployment         | Docker, Kubernetes                 |
 
 ---
 
+## ⏳ Before the Hackathon
+
+When we came across the problem statement, we were instantly drawn to it. The challenge combined creativity, learning, and real-world technical skills. 
+
+This was our **first time building a multiplayer game**, and the learning curve was steep—but rewarding. We explored:
+
+- **Real-time systems** with WebSockets and Pub/Sub architectures.
+- **Scalable infrastructure** using Docker and Kubernetes.
+- **Efficient backend development** with Go’s concurrency model.
+  
+Even before the hackathon began, we had already grown significantly—both technically and creatively. That foundational work shaped the way we designed HectoClash.
+
+---
+
+## 📚 What is Hectoc?
+
+**Hectoc** is a puzzle where you're given a 6-digit number and must reach 100 using math operations and parentheses—without rearranging the digits.
+
+✅ *Example:*  
+Input: `367626`  
+Output: `(36 + 76 - 2 × 6) = 100`
+
+---
+
+## Submissions
 
 
+---
