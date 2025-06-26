@@ -1,9 +1,6 @@
 # HectoClash
 
-A project made by ..
-
-
-during HackFest 2025
+A project made during HackFest 2025
 
 **HectoClash** is a real-time, competitive mental math game inspired by the Hectoc format. It brings together high-speed calculation, strategic thinking, and engaging multiplayer gameplay to create an educational yet thrilling experience.
 
